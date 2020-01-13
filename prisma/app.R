@@ -7,7 +7,7 @@ library(PRISMAstatement)
 
 box_width <- 200
 
-shinyApp(ui <- fluidPage(
+ui <- fluidPage(
   titlePanel("PRISMA-Flow Diagram generator"),
   sidebarLayout(
     sidebarPanel(
@@ -45,9 +45,11 @@ shinyApp(ui <- fluidPage(
     fluid = FALSE),
   useShinyalert(),
   add_busy_spinner(spin = "fading-circle",
-                   position = "bottom-left")),
+                   position = "bottom-left"))
+
+
   
-  server <- function(input, output) {
+server <- function(input, output) {
     output$preview <- renderGrViz({
       input$previewButton
       isolate({
@@ -77,5 +79,6 @@ shinyApp(ui <- fluidPage(
                  if(!is.null(warnmess)) shinyalert("Oops!",
                                                    paste(warnmess, "You should check your numbers!"),
                                                    type = "warning"))
-  }, options = list(width = 400)
-)
+  }
+
+shinyApp(ui, server, options = list(width = 400))
