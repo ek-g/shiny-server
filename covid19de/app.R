@@ -17,67 +17,64 @@ today <- format(today(), "%e.%m.")
 
 sheets_deauth()
 
+todaystats <- sheets_read(risklayer, sheet = "Statistics", range = "B1:I17")  %>% 
+  rename(Bundesland = 1,
+         !!today := 3,
+         Bevoelkerung = 6,
+         Tote = 8)
+
+heute <- todaystats %>% 
+  select(1,3) %>% 
+  pivot_longer(-Bundesland, names_to = "Datum", values_to = "Infizierte") %>% 
+  mutate(Datum = as_date(Datum, tz = "Europe/Berlin", format = "%e.%m.")) %>%
+  arrange(Bundesland, Datum)
+
+bevoelk <- todaystats %>% 
+  select(1, 6)
+
+gesamtzahl <- pull(sheets_read(risklayer, sheet = "Statistics", range = "D18", col_names = "Anzahl"))
+
+kuerzel <- tribble(~Kuerzel, ~Bundesland,
+                   "BW", "Baden-Württemberg",
+                   "BY", "Bayern",
+                   "BE", "Berlin",
+                   "BB", "Brandenburg",
+                   "HB", "Bremen",
+                   "HH", "Hamburg",
+                   "HE", "Hessen",
+                   "MV", "Mecklenburg-Vorpommern",
+                   "NI", "Niedersachsen",
+                   "NW", "Nordrhein-Westfalen",
+                   "RP", "Rheinland-Pfalz",
+                   "SL", "Saarland",
+                   "SN", "Sachsen",
+                   "ST", "Sachsen-Anhalt",
+                   "SH", "Schleswig-Holstein",
+                   "TH", "Thüringen")
+
 if(date(file.info(datapath)$mtime) < today()){
     
     landdata_raw <- sheets_read(risklayer, sheet = "Curve2", range = cell_rows(31:47)) %>% 
         select_if(~sum(!is.na(.)) > 0)
     
-    bevoelk <- tibble(Bundesland = pull(sheets_read(risklayer, sheet = "Statistics", range = "B1:B17")),
-                      Bevoelkerung = pull(sheets_read(risklayer, sheet = "Statistics", range = "G1:G17")),
-                      !!today := pull(sheets_read(risklayer, sheet = "Statistics", range = "D1:D17")),
-                      .name_repair = "minimal")
-    
-    todesfaelle <- tibble(Bundesland = pull(sheets_read(risklayer, sheet = "Statistics", range = "B1:B17")),
-                      Tote = pull(sheets_read(risklayer, sheet = "Statistics", range = "I1:I17")),
-                      .name_repair = "minimal")
-    
-    landdata <- left_join(landdata_raw, bevoelk %>% select(-Bevoelkerung), "Bundesland")
-    
-    landdata <- landdata %>%
+    landdata <- landdata_raw %>%
         pivot_longer(-Bundesland, names_to = "Datum", values_to = "Infizierte") %>% 
         mutate(Datum = as_date(Datum, tz = "Europe/Berlin", format = "%e.%m.")) %>%
         arrange(Bundesland, Datum)
     
-    landdata <- left_join(landdata, bevoelk %>% select(-!!today), "Bundesland")
-    
     write_csv(landdata, datapath)
     
-    }else landdata <- read_csv(datapath) 
-
-kuerzel <- tribble(~Kuerzel, ~Bundesland,
-                  "BW", "Baden-Württemberg",
-                  "BY", "Bayern",
-                  "BE", "Berlin",
-                  "BB", "Brandenburg",
-                  "HB", "Bremen",
-                  "HH", "Hamburg",
-                  "HE", "Hessen",
-                  "MV", "Mecklenburg-Vorpommern",
-                  "NI", "Niedersachsen",
-                  "NW", "Nordrhein-Westfalen",
-                  "RP", "Rheinland-Pfalz",
-                  "SL", "Saarland",
-                  "SN", "Sachsen",
-                  "ST", "Sachsen-Anhalt",
-                  "SH", "Schleswig-Holstein",
-                  "TH", "Thüringen")
+    }else landdata <- read_csv(datapath)
 
 landdata <- left_join(landdata, kuerzel, "Bundesland")
 
-todesfaelle <- tibble(Bundesland = pull(sheets_read(risklayer, sheet = "Statistics", range = "B1:B17")),
-                      Tote = pull(sheets_read(risklayer, sheet = "Statistics", range = "I1:I17")),
-                      .name_repair = "minimal")
+landdata <- left_join(landdata, heute)
 
-gesamtzahl <- pull(sheets_read(risklayer, sheet = "Statistics", range = "D18", col_names = "Anzahl"))
+landdata <- left_join(landdata, bevoelk, "Bundesland")
 
-todesfaelle <- left_join(todesfaelle, kuerzel, "Bundesland")
+todesfaelle <- left_join(todaystats %>% select(Bundesland, Tote), kuerzel, "Bundesland")
 
 fallmax <- max(landdata$Infizierte, na.rm = TRUE)
-    
-gesamt <- landdata %>% 
-  filter(Datum == max(Datum)) %>% 
-  summarise(Infizierte = sum(Infizierte)) %>% 
-  pull()
     
 gesamt_bevoelkerung <- landdata %>% 
   distinct(Bundesland, .keep_all = T) %>% 
@@ -110,7 +107,7 @@ ui <- dashboardPage(skin = "red",
                                     color = "red")
                             ),
                     column(6,
-                        valueBox(format(gesamt / gesamt_bevoelkerung * 1000, digits = 4),
+                        valueBox(format(gesamtzahl / gesamt_bevoelkerung * 1000, digits = 4),
                                  "pro 1000 Einwohner",
                                  icon = icon("bug"),
                                  width = NULL,
