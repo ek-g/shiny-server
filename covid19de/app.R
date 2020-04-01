@@ -124,20 +124,17 @@ ui <- dashboardPage(skin = "red",
                     column(6,
                         valueBox(format(gesamtzahl / gesamt_bevoelkerung * 100000, digits = 4),
                                  "pro 100 Tsd. Einwohner",
-                                 icon = icon("bug"),
                                  width = NULL,
                                  color = "red")
                             )
                     ),
                fluidRow(
                     column(6, valueBox(sum(todesfaelle$Tote), paste0("Todesfälle (", today_format, ")"),
-                        icon = icon("bug"),
                         width = NULL,
                         color = "black"),
                           ),
                     column(6, valueBox(format(sum(todesfaelle$Tote) / gesamt_bevoelkerung * 100000, digits = 6),
                                        "pro 100 Tsd. Einwohner",
-                                       icon = icon("bug"),
                                        width = NULL,
                                        color = "black")
                           )
@@ -153,9 +150,9 @@ ui <- dashboardPage(skin = "red",
                ),
     fluidRow(column(12, 
                 box(p("Letzte Aktualisierung am ", format(Sys.time(), tzone = tzone), "- Daten: ", a("Risklayer", href="http://www.risklayer.com/de/")),
-                 p("©", a("Eero Kuusisto-Gussmann", href="http://kuusisto.de")),
-                 width = NULL
-    )))),
+                 p("©", a("Eero Kuusisto-Gussmann", href="http://kuusisto.de"), a(icon("github"), href="https://github.com/ek-g/shiny-server/tree/master/covid19de")),
+                 width = NULL)
+                ))),
       tabItem("data",
               fluidRow(
               column(12, box(DTOutput('datatable'), width = NULL))
@@ -260,7 +257,7 @@ server <- function(input, output) {
     })
     
     output$datatable = renderDT(
-      landdata %>% select(-Bevoelkerung, -Kuerzel), options = list(lengthChange = FALSE, pageLength = 20, filter = 'top')
+      landdata %>% select(-Bevoelkerung, -Kuerzel), options = list(lengthChange = FALSE, pageLength = 20)
     )
 }
 
