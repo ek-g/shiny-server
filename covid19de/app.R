@@ -2,7 +2,6 @@ library(shiny)
 library(dplyr)
 library(tidyr)
 library(lubridate)
-library(ggplot2)
 library(googlesheets4)
 library(readr)
 library(plotly)
@@ -15,7 +14,7 @@ risklayer <- "1wg-s4_Lz2Stil6spQEYFdZaBEp8nWW26gVyfHqvcl8s"
 
 tzone <- "Europe/Berlin"
 
-Sys.setenv(TZ = "Europe/Berlin")
+Sys.setenv(TZ = tzone)
 
 today <- format(today(tzone = tzone), "%d.%m.")
 
@@ -94,8 +93,10 @@ gesamt_bevoelkerung <- landdata %>%
 datum <- format(max(landdata$Datum), "%d.%m.%Y")
 
 ui <- dashboardPage(skin = "red",
-  dashboardHeader(title = "Covid-19"),
-  dashboardSidebar(
+  dashboardHeader(title = "Covid-19",
+                  titleWidth = 120),
+  dashboardSidebar(width = 120,
+                   collapsed = TRUE,
     sidebarMenu(
       menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")),
       menuItem("Data", icon = icon("table"), tabName = "data")
@@ -105,57 +106,58 @@ ui <- dashboardPage(skin = "red",
     tabItems(
       tabItem("dashboard",
     fluidRow(
-        column(8,
+            div(class = "col-lg-8 col-sm-12",
             tabBox(
-                  tabPanel("Infizierte",
-                           plotlyOutput("landplot", height = "650px"), width = NULL),
-                  tabPanel("Infizierte pro 100 Tsd. Einwohner",
-                           plotlyOutput("rellandplot", height = "650px"), width = NULL),
+                  tabPanel("Zeitverlauf",
+                           plotlyOutput("landplot", height = "645px"), width = NULL),
+                  tabPanel("Pro 100 Tsd.",
+                           plotlyOutput("rellandplot", height = "645px"), width = NULL),
                   width = NULL)
               ),
-        column(4,
+            div(class = "col-lg-4",
                fluidRow(
-                    column(6,
-                        valueBox(paste0(gesamtzahl), paste0("Infizierte (", today_format, ")"),
+                        div(class = "col-sm-6",
+                        valueBox(gesamtzahl, "Infizierte",
                                     icon = icon("bug"),
                                     width = NULL,
                                     color = "red")
                             ),
-                    column(6,
-                        valueBox(format(gesamtzahl / gesamt_bevoelkerung * 100000, digits = 4),
-                                 "pro 100 Tsd. Einwohner",
+                        div(class = "col-sm-6",
+                        valueBox(format(round(gesamtzahl / gesamt_bevoelkerung * 100000, 2), nsmall = 2),
+                                 "pro 100 Tsd.",
                                  width = NULL,
                                  color = "red")
                             )
                     ),
                fluidRow(
-                    column(6, valueBox(sum(todesfaelle$Tote), paste0("Todesfälle (", today_format, ")"),
+                        div(class = "col-sm-6", valueBox(sum(todesfaelle$Tote), "Todesfälle",
                         width = NULL,
                         color = "black"),
                           ),
-                    column(6, valueBox(format(sum(todesfaelle$Tote) / gesamt_bevoelkerung * 100000, digits = 6),
-                                       "pro 100 Tsd. Einwohner",
+                        div(class = "col-sm-6", valueBox(format(round(sum(todesfaelle$Tote) / gesamt_bevoelkerung * 100000, 2), nsmall = 2),
+                                       "pro 100 Tsd.",
                                        width = NULL,
                                        color = "black")
                           )
                         ),
                tabBox(
-                 #title = "Relative Zahlen",
-                 tabPanel("Infizierte pro 100 Tsd.",
+                 tabPanel("Infizierte",
                           plotlyOutput("relplot"), width = NULL),
-                 tabPanel("Todesfälle pro 100 Tsd.",
+                 tabPanel("Todesfälle",
                           plotlyOutput("toteplot"), width = NULL),
                  width= NULL)
                 ),
                ),
-    fluidRow(column(12, 
-                box(p("Letzte Aktualisierung am ", format(Sys.time(), tzone = tzone), "- Daten: ", a("Risklayer", href="http://www.risklayer.com/de/")),
-                 p("©", a("Eero Kuusisto-Gussmann", href="http://kuusisto.de"), a(icon("github"), href="https://github.com/ek-g/shiny-server/tree/master/covid19de")),
-                 width = NULL)
-                ))),
+    fluidRow(
+          div(class = "col-lg-12", 
+                p("Letzte Aktualisierung am ", format(Sys.time(), tzone = tzone), "— Daten: ", a("Risklayer", href="http://www.risklayer.com/de/")),
+                p(a(icon("github"), href="https://github.com/ek-g/shiny-server/tree/master/covid19de"))
+              )
+            )
+        ),
       tabItem("data",
               fluidRow(
-              column(12, box(DTOutput('datatable'), width = NULL))
+                  div(class = "col-lg-12", box(DTOutput('datatable'), width = NULL))
               )
               )
       )
@@ -169,7 +171,7 @@ server <- function(input, output) {
         
         plot_ly(landdata, x =~Datum, y =~Infizierte,
                 color =~Bundesland, type='scatter', mode = 'lines',
-                line = list(width = 4),
+                line = list(width = 2),
                 text = ~Bundesland,
                 hovertemplate = paste(
                     "<b>%{text}</b><br>",
@@ -182,12 +184,13 @@ server <- function(input, output) {
                     range = c(0, fallmax)),
                 xaxis = list(
                     type = 'date',
-                    tickformat = "%d.%m.%Y"),
+                    tickformat = "%d.%m."),
                 legend = list(
                   x = 0.02,
                   y = 0.98,
                   font = list(size = 8)
-                )
+                ),
+                paper_bgcolor = '#00000000'
                 )
     })
     
@@ -195,7 +198,7 @@ server <- function(input, output) {
       
       plot_ly(landdata, x =~Datum, y =~Infizierte / Bevoelkerung * 100000,
               color =~Bundesland, type='scatter', mode = 'lines',
-              line = list(width = 4),
+              line = list(width = 2),
               text = ~Bundesland,
               hovertemplate = paste(
                 "<b>%{text}</b><br>",
@@ -209,12 +212,13 @@ server <- function(input, output) {
             title = "Infizierte pro 100 Tsd. Einwohner"),
           xaxis = list(
             type = 'date',
-            tickformat = "%d.%m.%Y"),
+            tickformat = "%d.%m."),
           legend = list(
             x = 0.02,
             y = 0.98,
             font = list(size = 8)
-          )
+          ),
+          paper_bgcolor = '#00000000'
         )
     })
     
