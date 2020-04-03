@@ -72,12 +72,13 @@ if(date(file.info(datapath)$mtime) < today(tzone = tzone)){
     
     }else landdata <- read_csv(datapath)
 
-landdata <- left_join(landdata, kuerzel, "Bundesland")
 
-landdata <- full_join(landdata, heute, by = c("Bundesland", "Datum", "Infizierte")) %>% 
+landdata <- bind_rows(landdata, heute) %>% 
   arrange(Bundesland, Datum)
 
 landdata <- left_join(landdata, bevoelk, "Bundesland")
+
+landdata <- left_join(landdata, kuerzel, "Bundesland")
 
 heute <- left_join(heute, bevoelk) %>% 
   left_join(kuerzel)
@@ -131,7 +132,7 @@ ui <- dashboardPage(skin = "red",
                             )
                     ),
                fluidRow(
-                        div(class = "col-sm-6", valueBox(sum(todesfaelle$Tote), "Todesfälle",
+                        div(class = "col-sm-6", valueBox(format(sum(todesfaelle$Tote), big.mark = " "), "Todesfälle",
                         width = NULL,
                         color = "black"),
                           ),
