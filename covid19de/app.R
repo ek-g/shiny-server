@@ -37,7 +37,7 @@ heute <- todaystats %>%
 bevoelk <- todaystats %>% 
   select(1, 6)
 
-gesamtzahl <- format(sum(todaystats %>% select(!!today)), big.mark = " ")
+gesamtzahl <- sum(todaystats %>% select(!!today))
 
 kuerzel <- tribble(~Kuerzel, ~Bundesland,
                    "BW", "Baden-Württemberg",
@@ -118,7 +118,7 @@ ui <- dashboardPage(skin = "red",
             div(class = "col-lg-4",
                fluidRow(
                         div(class = "col-sm-6",
-                        valueBox(gesamtzahl, "Infizierte",
+                        valueBox(format(gesamtzahl, big.mark = " "), "Infizierte",
                                     icon = icon("bug"),
                                     width = NULL,
                                     color = "red")
