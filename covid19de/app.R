@@ -37,7 +37,7 @@ heute <- todaystats %>%
 bevoelk <- todaystats %>% 
   select(1, 6)
 
-gesamtzahl <- sum(todaystats %>% select(!!today))
+gesamtzahl <- format(sum(todaystats %>% select(!!today)), big.mark = " ")
 
 kuerzel <- tribble(~Kuerzel, ~Bundesland,
                    "BW", "Baden-Württemberg",
@@ -60,6 +60,7 @@ kuerzel <- tribble(~Kuerzel, ~Bundesland,
 if(date(file.info(datapath)$mtime) < today(tzone = tzone)){
     
     landdata_raw <- sheets_read(risklayer, sheet = "Curve2", range = cell_rows(31:47)) %>% 
+        rename(Bundesland = 1) %>% 
         select_if(~sum(!is.na(.)) > 0)
     
     landdata <- landdata_raw %>%
