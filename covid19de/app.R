@@ -20,6 +20,8 @@ today <- format(today(tzone = tzone), "%d.%m.")
 
 today_format <- format(today(tzone = tzone), "%d.%m.%Y")
 
+error <- try({
+
 sheets_deauth()
 
 todaystats <- sheets_read(risklayer, sheet = "Statistics", range = "B1:I17")  %>% 
@@ -61,7 +63,7 @@ if(date(file.info(datapath)$mtime) < today(tzone = tzone)){
     
     landdata_raw <- sheets_read(risklayer, sheet = "Curve2", range = cell_rows(31:47)) %>% 
         rename(Bundesland = 1) %>% 
-        select_if(~sum(!is.na(.)) > 0)
+        select_if(~sum(!is.na(.)) >= nrow(landdata_raw))
     
     landdata <- landdata_raw %>%
         pivot_longer(-Bundesland, names_to = "Datum", values_to = "Infizierte") %>% 
@@ -93,6 +95,22 @@ gesamt_bevoelkerung <- landdata %>%
   pull()
     
 datum <- format(max(landdata$Datum), "%d.%m.%Y")
+
+last_data <- list(landdata, heute, todesfaelle, fallmax, gesamt_bevoelkerung, datum)
+
+saveRDS(last_data, "data/last_data.RDS")
+
+}, silent = TRUE)
+
+if (class(error) == "try-error") {
+  readRDS(last_data, "data/last_data.RDS")
+  landdata <- last_data$landdata
+  heute <- last_data$heute
+  todesfaelle <- last_data$todesfaelle
+  fallmax <- last_data$fallmax
+  gesamt_bevoelkerung <- last_data$gesamt_bevoelkerung
+  datum <- last_data$datum
+}
 
 ui <- dashboardPage(skin = "red",
   dashboardHeader(title = "Covid-19",
@@ -152,7 +170,7 @@ ui <- dashboardPage(skin = "red",
                ),
     fluidRow(
           div(class = "col-lg-12", 
-                p("Letzte Aktualisierung am ", format(Sys.time(), tzone = tzone), "— Daten: ", a("Risklayer", href="http://www.risklayer.com/de/")),
+                p("Letzte Aktualisierung am ", format(file.info("data/last_data.RDS")$mtime, tzone = tzone), "— Daten: ", a("Risklayer", href="http://www.risklayer.com/de/")),
                 p(a(icon("github"), href="https://github.com/ek-g/shiny-server/tree/master/covid19de"))
               )
             )
@@ -211,7 +229,7 @@ server <- function(input, output) {
         layout(
           yaxis = list(
             range = c(0, max(landdata$Infizierte / landdata$Bevoelkerung * 100000)),
-            title = "Infizierte pro 100 Tsd. Einwohner"),
+            title = "Infizierte pro 100 Tsd."),
           xaxis = list(
             type = 'date',
             tickformat = "%d.%m."),
@@ -239,7 +257,7 @@ server <- function(input, output) {
                         "<extra></extra>")) %>% 
             layout(yaxis = list(categoryorder = "array", categoryarray = ~pro1000,
                                 title = "Bundesland"),
-                   xaxis = list(title = "Infizierte pro 100 Tsd. Einwohner")) %>%
+                   xaxis = list(title = "Infizierte pro 100 Tsd.")) %>%
             hide_colorbar()
     })
     
@@ -258,7 +276,7 @@ server <- function(input, output) {
                         "<extra></extra>")) %>% 
             layout(yaxis = list(categoryorder = "array", categoryarray = ~pro1000,
                                 title = "Bundesland"),
-                   xaxis = list(title = "Todesfälle pro 100 Tsd. Einwohner")) %>%
+                   xaxis = list(title = "Todesfälle pro 100 Tsd.")) %>%
             hide_colorbar()
     })
     
