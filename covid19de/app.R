@@ -9,6 +9,7 @@ library(shinydashboard)
 library(DT)
 
 datapath <- "data/risklayer.csv"
+last_datapath <- "data/last_data.RDS"
 
 risklayer <- "1wg-s4_Lz2Stil6spQEYFdZaBEp8nWW26gVyfHqvcl8s"
 
@@ -96,20 +97,21 @@ gesamt_bevoelkerung <- landdata %>%
     
 datum <- format(max(landdata$Datum), "%d.%m.%Y")
 
-last_data <- list(landdata, heute, todesfaelle, fallmax, gesamt_bevoelkerung, datum)
+last_data <- list(landdata = landdata, heute = heute, todesfaelle = todesfaelle, 
+                  fallmax = fallmax, gesamt_bevoelkerung = gesamt_bevoelkerung, datum = datum)
 
-saveRDS(last_data, "data/last_data.RDS")
+saveRDS(last_data, last_datapath)
 
 }, silent = TRUE)
 
 if (class(error) == "try-error") {
-  readRDS(last_data, "data/last_data.RDS")
-  landdata <- last_data$landdata
-  heute <- last_data$heute
-  todesfaelle <- last_data$todesfaelle
-  fallmax <- last_data$fallmax
-  gesamt_bevoelkerung <- last_data$gesamt_bevoelkerung
-  datum <- last_data$datum
+  data <- readRDS(last_datapath)
+  landdata <- data$landdata
+  heute <- data$heute
+  todesfaelle <- data$todesfaelle
+  fallmax <- data$fallmax
+  gesamt_bevoelkerung <- data$gesamt_bevoelkerung
+  datum <- data$datum
 }
 
 ui <- dashboardPage(skin = "red",
@@ -170,7 +172,7 @@ ui <- dashboardPage(skin = "red",
                ),
     fluidRow(
           div(class = "col-lg-12", 
-                p("Letzte Aktualisierung am ", format(file.info("data/last_data.RDS")$mtime, tzone = tzone), "— Daten: ", a("Risklayer", href="http://www.risklayer.com/de/")),
+                p("Letzte Aktualisierung am ", format(file.info(last_datapath)$mtime, tzone = tzone), "— Daten: ", a("Risklayer", href="http://www.risklayer.com/de/")),
                 p(a(icon("github"), href="https://github.com/ek-g/shiny-server/tree/master/covid19de"))
               )
             )
