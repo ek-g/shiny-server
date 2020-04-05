@@ -68,7 +68,7 @@ if(date(file.info(datapath)$mtime) < today(tzone = tzone)){
     
     landdata <- landdata_raw %>%
         pivot_longer(-Bundesland, names_to = "Datum", values_to = "Infizierte") %>% 
-        mutate(Datum = as_date(Datum, tz = tzone, format = "%e.%m.")) %>%
+        mutate(Datum = as_date(Datum, tz = tzone, format = "%e.%m")) %>%
         arrange(Bundesland, Datum)
     
     write_csv(landdata, datapath)
