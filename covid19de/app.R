@@ -99,7 +99,8 @@ gesamt_bevoelkerung <- landdata %>%
 datum <- format(max(landdata$Datum), "%d.%m.%Y")
 
 last_data <- list(landdata = landdata, heute = heute, todesfaelle = todesfaelle, 
-                  fallmax = fallmax, gesamt_bevoelkerung = gesamt_bevoelkerung, datum = datum)
+                  fallmax = fallmax, gesamt_bevoelkerung = gesamt_bevoelkerung, datum = datum,
+                  gesamtzahl = gesamtzahl)
 
 saveRDS(last_data, last_datapath)
 
