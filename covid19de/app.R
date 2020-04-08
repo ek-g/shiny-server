@@ -8,6 +8,7 @@ library(plotly)
 library(shinydashboard)
 library(DT)
 
+
 datapath <- "data/risklayer.csv"
 last_datapath <- "data/last_data.RDS"
 
@@ -34,7 +35,7 @@ todaystats <- sheets_read(risklayer, sheet = "Statistics", range = "B1:I17")  %>
 heute <- todaystats %>% 
   select(1,3) %>% 
   pivot_longer(-Bundesland, names_to = "Datum", values_to = "Infizierte") %>% 
-  mutate(Datum = as_date(Datum, tz = tzone, format = "%d.%m.")) %>%
+  mutate(Datum = as_date(Datum, format = "%d.%m.")) %>%
   arrange(Bundesland, Datum)
 
 bevoelk <- todaystats %>% 
@@ -64,11 +65,11 @@ if(date(file.info(datapath)$mtime) < today(tzone = tzone)){
     
     landdata_raw <- sheets_read(risklayer, sheet = "Curve2", range = cell_rows(31:47)) %>% 
         rename(Bundesland = 1) %>% 
-        select_if(~sum(!is.na(.)) >= nrow(landdata_raw))
+        select_if(~sum(!is.na(.)) >= 0)
     
     landdata <- landdata_raw %>%
         pivot_longer(-Bundesland, names_to = "Datum", values_to = "Infizierte") %>% 
-        mutate(Datum = as_date(Datum, tz = tzone, format = "%e.%m")) %>%
+        mutate(Datum = as_date(Datum, format = "%e.%m")) %>%
         arrange(Bundesland, Datum)
     
     write_csv(landdata, datapath)
