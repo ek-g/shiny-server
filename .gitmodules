@@ -1,3 +1,6 @@
 [submodule "ShinyPRISMA"]
 	path = ShinyPRISMA
 	url = https://github.com/ek-g/ShinyPRISMA
+[submodule "covid19de"]
+	path = covid19de
+	url = https://github.com/ek-g/covid19de
